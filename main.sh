@@ -1,9 +1,24 @@
 #!/usr/bin/env zsh
 
-# echo "alias jhb='~/JiraHub/main.sh'"
+source ~/JiraHub/package.sh
 
-jhb() {
-    echo hello
-}
+if [[ $1 == 'show' ]]; then
+    jira_show
+elif [[ $1 == 'trim' ]]; then
+    jira_updt
+    git_trim
+elif [[ $1 == 'grow' ]]; then
+    jira_updt
+    git_grow
+elif [[ $1 == 'prep' ]]; then
+    git_prep
+elif [[ $1 == 'swap' ]]; then
+    git_swap $2
+elif [[ $1 == 'rest' ]]; then
+    git_rest $2
+elif [[ $1 == 'help' ]]; then
+    help
+else
+    logo
+fi
 
-jhb
