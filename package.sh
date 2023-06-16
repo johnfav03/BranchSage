@@ -242,7 +242,16 @@ logo() {
 #### INIT ####
 # LOGS RELEVANT DATA TO auth.txt
 init() {
-
+    > ~/BranchSage/auth.txt
+    prsl "Jira Email >>>  "
+    read email
+    echo $email >> ~/BranchSage/auth.txt
+    prsl "Jira API Token >>>  "
+    read token
+    echo $token >> ~/BranchSage/auth.txt
+    prsl "AWS Login Preference (optional) >>>  "
+    read awsid
+    echo $awsid >> ~/BranchSage/auth.txt
 }
 
 # BASIC FUNCTIONS
