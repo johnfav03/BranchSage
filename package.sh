@@ -17,9 +17,8 @@ jira_show() {
     done <<< $ticks
 }
 
-#### UPDT #### // not an opt anymore
 # UPDATES REGISTRY IN curr.txt WITH ACTIVE TICKETS
-jira_updt() {
+jira_pull() {
     token=$(read_token)
     uname=$(read_uname)
     ticks=$(read_ticks)
@@ -27,7 +26,7 @@ jira_updt() {
     prnl updating local ticket registry
 	blob=$(curl -s -u $uname:$token -X GET -H "Content-Type: application/json" "https://energysage.atlassian.net/rest/api/3/search?jql=assignee=$encod")
     keys=$(jq -r '.issues[] | select(.fields.status.name != "Done") | .key' <<< $blob)
-    echo $keys > ~/JiraHub/curr.txt
+    echo $keys > ~/BranchSage/curr.txt
 }
 
 #### TRIM ####
@@ -110,9 +109,10 @@ jira_name() { # CREATES NAME FROM TICKET
 	echo $name
 }
 
-#### PREP ####
+#### SYNC ####
 # PREPS DEVELOP FOR NEW BRANCH USING EGS PROCESS
-git_prep() {
+git_sync() {
+    awsid=$(read_awsid)
     if [[ $(git branch --show-current) != "develop" ]]; then
         if [ -z $(git status -s) ]; then
             prnl checking out develop
@@ -131,7 +131,7 @@ git_prep() {
 	git pull --ff-only
 	if [ -z $(echo $AWS_PROFILE) ]; then
 		prnl login to aws
-		source ~/Dev/es-dev-utils/aws_login.sh $1
+		source ~/Dev/es-dev-utils/aws_login.sh $awsid
 	fi
     prnl running make update
 	make update
@@ -164,18 +164,15 @@ git_opts() { # PRINTS BRANCH OPTS
 	echo $opts
 }
 
-#### REST ####
+#### ROLL ####
 # TAKES FILE IDX OR PRINTS PROMPT TO RESTORE FILE
-git_rest() {
-    idx=$1
-    if [ -z $1 ]; then
-        git_diff
-        if [ -z "$(git status -s)" ]; then
-            return
-        fi
-        prsl "file # >>>  "
-        read idx
+git_roll() {
+    if [ -z "$(git status -s)" ]; then
+        return
     fi
+    git_diff
+    prsl "file # >>>  "
+    read idx
     if [[ $idx == '.' ]]; then
         line=.
         name=all
@@ -197,16 +194,17 @@ git_diff() { # PRINTS CHANGED FILES, INDEXED
     fi
 }
 
-#### WORK ####
+#### PREP ####
 # SETS UP DIRECTORY, VENV, AND AWS
-work() {
+prep() {
+    awsid=$(read_awsid)
     prnl opening directory
 	cd ~/Dev/es-project/es-site/es
 	prnl starting virtual env
 	source ~/Dev/es-project/venv/bin/activate
 	if [ -z $(echo $AWS_PROFILE) ]; then
 		prnl login to aws
-		source ~/Dev/es-dev-utils/aws_login.sh $1
+		source ~/Dev/es-dev-utils/aws_login.sh $awsid
 	fi
 }
 
@@ -241,10 +239,17 @@ logo() {
     echo
 }
 
+#### INIT ####
+# LOGS RELEVANT DATA TO auth.txt
+init() {
+
+}
+
 # BASIC FUNCTIONS
-read_token() { echo $(cat ~/JiraHub/auth.txt | sed -n '1p'); }
-read_uname() { echo $(cat ~/JiraHub/auth.txt | sed -n '2p'); }
-read_ticks() { cat ~/JiraHub/curr.txt; }
+read_token() { echo $(cat ~/BranchSage/auth.txt | sed -n '1p'); }
+read_uname() { echo $(cat ~/BranchSage/auth.txt | sed -n '2p'); }
+read_awsid() { echo $(cat ~/BranchSage/auth.txt | sed -n '3p'); }
+read_ticks() { cat ~/BranchSage/curr.txt; }
 prnl() { echo $fg[$txtcolor]$@$reset_color; }
 prsl() { echo -n $fg[$txtcolor]$@$reset_color; }
 
@@ -253,7 +258,7 @@ help() {
     prnl the following commands are available to use
     prnl to run them, type egs followed by the word in brackets
     echo
-    echo '[work]: nagivates to the appropriate directory, then activates the virtual'
+    echo '[prep]: nagivates to the appropriate directory, then activates the virtual'
     echo 'environment and runs the aws login script, if not already logged in.'
     echo 
     echo '[show]: prints out the numbers of all of your active tickets, followed by'
@@ -265,16 +270,16 @@ help() {
     echo '[grow]: searches through all active of your active Jira tickets, and creates'
     echo 'new branches for any that dont yet have local branches.'
     echo
-    echo '[prep]: pulls from the remote repository and runs make update on the develop'
-    echo 'branch, which prepares it for new branches. run this before running [grow].'
-    echo
     echo '[swap]: now that your branch names are long, this takes a parameter, or if'
     echo 'not given one, prints a prompt, and then uses the 4 number code for the ticket'
     echo "to checkout the corresponding branch. '.' will checkout the develop branch."
     echo
-    echo '[rest]: a shortcut for restoring changed files that you dont want changed: if'
+    echo '[roll]: a shortcut for restoring changed files that you dont want changed: if'
     echo 'no parameter is given, it will print a prompt with the changed files indexed,'
     echo "then uses your input to restore that file. '.' will restore everything."
+    echo
+    echo '[sync]: pulls from the remote repository and runs make update on the develop'
+    echo 'branch, which prepares it for new branches. run this before running [grow].'
     echo
     prnl enjoy, and try '[logo]' for a fun surprise!
 }
