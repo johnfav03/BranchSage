@@ -34,7 +34,7 @@ jira_updt() {
 # REMOVES REMAINING BRANCHES FOR COMPLETED TICKETS
 git_trim() {
     ticks=$(read_ticks)
-    brans=$(git branch --format='%(refname:short)' | sed '/^develop$/d')
+    brans=$(git branch --format='%(refname:short)' | sed '/^[A-Z]\{1,\}-[0-9]\{4\}-.*$/!d')
     count=0
     if [[ $(git branch --show-current) != "develop" ]]; then
         if [ -z $(git status -s) ]; then
@@ -131,7 +131,7 @@ git_prep() {
 	git pull --ff-only
 	if [ -z $(echo $AWS_PROFILE) ]; then
 		prnl login to aws
-		source ~/Dev/es-dev-utils/aws_login.sh es-site-dev
+		source ~/Dev/es-dev-utils/aws_login.sh $1
 	fi
     prnl running make update
 	make update
@@ -197,8 +197,48 @@ git_diff() { # PRINTS CHANGED FILES, INDEXED
     fi
 }
 
-logo() {
+#### WORK ####
+# SETS UP DIRECTORY, VENV, AND AWS
+work() {
+    prnl opening directory
+	cd ~/Dev/es-project/es-site/es
+	prnl starting virtual env
+	source ~/Dev/es-project/venv/bin/activate
+	if [ -z $(echo $AWS_PROFILE) ]; then
+		prnl login to aws
+		source ~/Dev/es-dev-utils/aws_login.sh $1
+	fi
+}
 
+#### LOGO ####
+# PRINTS ASCII ART OF THE ENERGYSAGE LOGO
+logo() {
+    echo
+    prnl '****************************************'
+    prnl '*****************=.  .=*****************'
+    prnl '***************-   ::   -+**************'
+    prnl '*************-   :+**+:   -+************'
+    prnl '***********=   :+******+:   =***********'
+    prnl '*********=.  :+*****:****+:  .=*********'
+    prnl '*******+:  .+******:  *****+.  :+*******'
+    prnl '******+.  -*******- = -******-   =******'
+    prnl '*****=  .+*******= -= =*******+.  =*****'
+    prnl '****=  .+*******+ :*= +********+.  =****'
+    prnl '***+   +*******= -**=::: :******+.  +***'
+    prnl '***-  -*******+ :=****=: +*******-  -***'
+    prnl '***-  -*******: :::=**- =********=  -***'
+    prnl '***+  .**********+ =*: +*********:  +***'
+    prnl '****:  =*********= =- =*********=  .****'
+    prnl '****+.  =********- = -*********=   +****'
+    prnl '*****+:  :+*******  :********+:  .+*****'
+    prnl '*******=   :=******:*******=:   -*******'
+    prnl '*********=.   .:-=++++=-:.   .-*********'
+    prnl '***********+=:.          .:=+***********'
+    prnl '****************++-  -++****************'
+    prnl '******************=  -******************'
+    prnl '******************+  =******************'
+    prnl '****************************************'
+    echo
 }
 
 # BASIC FUNCTIONS
@@ -210,7 +250,31 @@ prsl() { echo -n $fg[$txtcolor]$@$reset_color; }
 
 #### HELP ####
 help() {
-    prnl these are the available commands:
-    prnl
-    prnl 
+    prnl the following commands are available to use
+    prnl to run them, type egs followed by the word in brackets
+    echo
+    echo '[work]: nagivates to the appropriate directory, then activates the virtual'
+    echo 'environment and runs the aws login script, if not already logged in.'
+    echo 
+    echo '[show]: prints out the numbers of all of your active tickets, followed by'
+    echo 'the ticket status for each one.'
+    echo
+    echo '[trim]: searches through branches and deletes any that correspond to tickets'
+    echo 'that have been marked as Done in Jira.'
+    echo
+    echo '[grow]: searches through all active of your active Jira tickets, and creates'
+    echo 'new branches for any that dont yet have local branches.'
+    echo
+    echo '[prep]: pulls from the remote repository and runs make update on the develop'
+    echo 'branch, which prepares it for new branches. run this before running [grow].'
+    echo
+    echo '[swap]: now that your branch names are long, this takes a parameter, or if'
+    echo 'not given one, prints a prompt, and then uses the 4 number code for the ticket'
+    echo "to checkout the corresponding branch. '.' will checkout the develop branch."
+    echo
+    echo '[rest]: a shortcut for restoring changed files that you dont want changed: if'
+    echo 'no parameter is given, it will print a prompt with the changed files indexed,'
+    echo "then uses your input to restore that file. '.' will restore everything."
+    echo
+    prnl enjoy, and try '[logo]' for a fun surprise!
 }
