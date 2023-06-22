@@ -9,8 +9,8 @@ jira_show() {
     token=$(read_token)
     uname=$(read_uname)
     currs=""
-    prnl fetching ticket status
     while IFS= read -r tick; do 
+        prnl reading $tick
         blob=$(curl -s -u $uname:$token -X GET -H "Content-Type: application/json" https://energysage.atlassian.net/rest/api/3/issue/$tick)
         stat=$(jq -r '.fields.status.name' <<< $blob)
         echo $tick: $stat
@@ -87,6 +87,7 @@ git_grow () {
                 git restore .
             fi
             name=$(jira_name $tick)
+            prnl creating branch $name
             git checkout -b $name
             git push -u origin HEAD
             ((count++))
@@ -101,11 +102,12 @@ git_grow () {
 jira_name() { # CREATES NAME FROM TICKET
     token=$(read_token)
     uname=$(read_uname)
-    blob=$(curl -s -u $token:$uname -X GET -H "Content-Type: application/json" https://energysage.atlassian.net/rest/api/3/issue/$1)
-	desc=$(jq -r '.fields.summary' <<< $blob)
+    blob=$(curl -s -u $uname:$token -X GET -H "Content-Type: application/json" https://energysage.atlassian.net/rest/api/3/issue/$1)
+    desc=$(jq -r '.fields.summary' <<< $blob)
 	name=$(echo $desc | tr '[:upper:]' '[:lower:]')
 	name=$(echo $name | tr ' ' '-')
-    name=$(echo $name | tr -cd '[:alnum:]')
+    name=$(echo $name | tr -cd '[:alnum:]-')
+    name=$(echo $name | sed 's/-$//')
 	echo $name
 }
 
