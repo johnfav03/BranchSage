@@ -39,7 +39,7 @@ grow is the opposite of trim; it also pulls from Jira to update the local regist
 - ***[swap]***
 
 swap is a tool to help facilitate quick navigation between branches that correspond to tickets; after using grow, branch names can get quite long. this command takes a parameter of a 4 digit number, or prints a prompt to ask for one if left blank. It then checks out the branch that matches that ticket number. By default, entering '.' as either the parameter or in the prompt will take you to the `develop` branch.
-- ***[roll]***
+- ***[rest]***
 
 roll is meant to make restoring files through git quicker; instead of typing the whole file path, this command prints all changed files indexed, then prints a prompt to take in an index. It then restores that file to it's state from the previous commit. By default, entering '.' in the prompt will restore all files.
 - ***[sync]***

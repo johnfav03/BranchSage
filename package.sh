@@ -144,10 +144,10 @@ git_swap() {
         prnl stash or commit changes
         return
     fi
-    opts=$(git branch --format='%(refname:short)' | sed '/^develop$/d')
 	idx=$1
 	if [ -z $idx ]; then
         git_opts
+        opts=$(git branch --format='%(refname:short)' | sed '/^develop$/d')
         prsl "issue # >>>  "
         read idx
 	fi
@@ -155,18 +155,22 @@ git_swap() {
         line=develop
     else
         line=$(echo $opts | grep -E "$idx" | sed 's/^[[:blank:]]*//')
+        if [ -z $line ]; then
+            prnl branch not found
+            return
+        fi
     fi
     git checkout $line
 }
 git_opts() { # PRINTS BRANCH OPTS
-    opts=$(git branch | sed '/^develop$/d')
+    opts=$(git branch | sed -e '/^develop$/d' -e '/^\* develop$/d')
     prnl available branches:
 	echo $opts
 }
 
 #### ROLL ####
 # TAKES FILE IDX OR PRINTS PROMPT TO RESTORE FILE
-git_roll() {
+git_rest() {
     if [ -z "$(git status -s)" ]; then
         return
     fi

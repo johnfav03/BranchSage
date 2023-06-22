@@ -22,7 +22,8 @@ elif [[ $1 == 'sync' ]]; then
     git_sync
 elif [[ $1 == 'swap' ]]; then
     git_swap $2
-elif [[ $1 == 'roll' ]]; then
-    git_roll
+elif [[ $1 == 'rest' ]]; then
+    git_rest
+else
+    prnl not a command.
 fi
-
