@@ -1,5 +1,5 @@
 # BranchSage
-This is a script that's meant to improve workplace efficiency by connecting to the Jira API to maintain a local registry of active tickets and help automatically name branches. In addition, the goal was to automate company standard processes for using git, creating new branches, and more.
+This is a script that's meant to improve workplace efficiency for EnergySage by connecting to the Jira API to maintain a local registry of active tickets and help automatically name branches. In addition, the goal was to automate company standard processes for using git, creating new branches, and more.
 # Prerequisites
 You'll need 2 pieces of information for the startup script - your email that Jira uses, which likely follows the format of first.last@energysage.com. The second piece you need is a Jira API Token. To get an API Token for your account, follow this link: [Jira API Tokens](https://id.atlassian.com/manage-profile/security/api-tokens). Then, click the 'Create API Token'. Give it a label, click 'Create', then click 'Copy'. Write this down for the setup!
 # Setup
