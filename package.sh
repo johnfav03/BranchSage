@@ -10,10 +10,10 @@ jira_show() {
     uname=$(read_uname)
     currs=""
     while IFS= read -r tick; do 
-        prnl reading $tick
         blob=$(curl -s -u $uname:$token -X GET -H "Content-Type: application/json" https://energysage.atlassian.net/rest/api/3/issue/$tick)
         stat=$(jq -r '.fields.status.name' <<< $blob)
-        echo $tick: $stat
+        prsl $tick: 
+        echo ' '$stat
     done <<< $ticks
 }
 
