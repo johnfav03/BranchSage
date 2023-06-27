@@ -167,7 +167,7 @@ git_swap() {
     git checkout $line
 }
 git_opts() { # PRINTS BRANCH OPTS
-    opts=$(git branch | sed -e '/^develop$/d' -e '/^\* develop$/d')
+    opts=$(git branch | sed -e '/^  develop$/d')
     prnl available branches:
 	echo $opts
 }
