@@ -12,7 +12,7 @@ jira_show() {
     while IFS= read -r tick; do 
         blob=$(curl -s -u $uname:$token -X GET -H "Content-Type: application/json" https://energysage.atlassian.net/rest/api/3/issue/$tick)
         stat=$(jq -r '.fields.status.name' <<< $blob)
-        prsl $tick: 
+        prsl $tick:
         echo ' '$stat
     done <<< $ticks
 }
@@ -103,12 +103,14 @@ jira_name() { # CREATES NAME FROM TICKET
     token=$(read_token)
     uname=$(read_uname)
     blob=$(curl -s -u $uname:$token -X GET -H "Content-Type: application/json" https://energysage.atlassian.net/rest/api/3/issue/$1)
+    tags=$(jq -r '.key' <<< $blob)
     desc=$(jq -r '.fields.summary' <<< $blob)
 	name=$(echo $desc | tr '[:upper:]' '[:lower:]')
 	name=$(echo $name | tr ' ' '-')
     name=$(echo $name | tr -cd '[:alnum:]-')
     name=$(echo $name | sed 's/-$//')
-	echo $name
+    tags+='-'$name
+	echo $tags
 }
 
 #### SYNC ####
