@@ -13,7 +13,7 @@ jira_show() {
     ghtok=$GITHUB_TOKEN
     currs=""
     while IFS= read -r tick; do 
-        prsl $tick:
+        prsl $tick': '
         blob=$(curl -s -u $uname:$token -X GET -H "Content-Type: application/json" https://energysage.atlassian.net/rest/api/3/issue/$tick)
         stat=$(jq -r '.fields.status.name' <<< $blob)
         if [[ $stat == "Awaiting Deployment" ]]; then
@@ -27,7 +27,7 @@ jira_show() {
                 fi
             fi
         fi
-        echo ' '$stat
+        echo $stat
     done <<< $ticks
 }
 
@@ -91,10 +91,7 @@ git_grow () {
         prnl stash or commit changes
         return
     fi
-    if [[ -n $(git status -uno | grep "Your branch is behind") ]]; then
-        prnl run prep on develop
-        return
-    fi
+    git_sync
     while IFS= read -r tick; do
         if [[ $brans != *"$tick"* ]]; then
             if [[ $(git branch --show-current) != "develop" ]]; then
@@ -133,15 +130,6 @@ jira_name() { # CREATES NAME FROM TICKET
 # PREPS DEVELOP FOR NEW BRANCH USING EGS PROCESS
 git_sync() {
     awsid=$AWS_PREF
-    if [[ $(git branch --show-current) != "develop" ]]; then
-        if [ -z $(git status -s) ]; then
-            prnl checking out develop
-            git checkout develop
-        else
-            prnl stash or commit changes
-            return
-        fi
-    fi
     if [[ -n $(git status -s) ]]; then
         prnl stash or commit changes
         return
@@ -171,6 +159,9 @@ git_swap() {
         opts=$(git branch --format='%(refname:short)' | sed '/^develop$/d')
         prsl "issue # >>>  "
         read idx
+        if [ -z $idx ]; then
+            return
+        fi
 	fi
     if [[ $idx == '.' ]]; then
         line=develop
@@ -210,6 +201,9 @@ git_rest() {
     git_file
     prsl "file # >>>  "
     read idx
+    if [ -z $idx ]; then
+        return
+    fi
     if [[ $idx == '.' ]]; then
         line=.
         name=all
@@ -230,6 +224,9 @@ git_diff() {
     git_file
     prsl "file # >>>  "
     read idx
+    if [ -z $idx ]; then
+        return
+    fi
     opts=$(git status -s | sed 's/^[^[:space:]]*[[:space:]]*[^[:space:]]*[[:space:]]*//')
     line=$(echo $opts | sed "$idx q;d")
     name=$(echo $line | sed 's|.*/||')
@@ -241,9 +238,10 @@ git_diff() {
 # TODO
 1pass_load() {
     if [[ -z $(echo $JIRA_UNAME) ]]; then
-        prnl signing in to 1password
-        export JIRA_TOKEN=$(op item get 'BranchSage Credentials' --fields label=credential)
-        export JIRA_UNAME=$(op item get 'BranchSage Credentials' --fields label=username)
+        prnl sign in to 1password
+        export JIRA_UNAME=$(op item get 'BranchSage Credentials' --fields label=jirausername)
+        export JIRA_TOKEN=$(op item get 'BranchSage Credentials' --fields label=jiratoken)
+        export GITHUB_TOKEN=$(op item get 'BranchSage Credentials' --fields label=githubtoken)
         export AWS_PREF=$(op item get 'BranchSage Credentials' --fields label=awspref)
     fi
 }
@@ -267,8 +265,8 @@ prep() {
 logo() {
     prnl '****************************************'
     prnl '*****************=.  .=*****************'
-    prnl '***************-   ::   -+**************'
-    prnl '*************-   :+**+:   -+************'
+    prnl '**************+-   ::   -+**************'
+    prnl '************+-   :+**+:   -+************'
     prnl '***********=   :+******+:   =***********'
     prnl '*********=.  :+*****:****+:  .=*********'
     prnl '*******+:  .+******:  *****+.  :+*******'
@@ -277,42 +275,51 @@ logo() {
     prnl '****=  .+*******+ :*= +********+.  =****'
     prnl '***+   +*******= -**=::: :******+.  +***'
     prnl '***-  -*******+ :=****=: +*******-  -***'
-    prnl '***-  -*******: :::=**- =********=  -***'
-    prnl '***+  .**********+ =*: +*********:  +***'
-    prnl '****:  =*********= =- =*********=  .****'
-    prnl '****+.  =********- = -*********=   +****'
-    prnl '*****+:  :+*******  :********+:  .+*****'
-    prnl '*******=   :=******:*******=:   -*******'
-    prnl '*********=.   .:-=++++=-:.   .-*********'
+    prnl '***-  =*******: :::=**- =********=  -***'
+    prnl '***+  :**********+ =*: +*********:  +***'
+    prnl '****.  =*********= =- =*********=  .****'
+    prnl '****+   =********- = -*********=   +****'
+    prnl '*****+.  :+*******  :********+:  .+*****'
+    prnl '*******=   :=******:*******=:   =*******'
+    prnl '*********=.   .:-=++++=-:.   .=*********'
     prnl '***********+=:.          .:=+***********'
     prnl '****************++-  -++****************'
-    prnl '******************=  -******************'
-    prnl '******************+  =******************'
+    prnl '******************=  =******************'
+    prnl '******************=  =******************'
     prnl '****************************************'
 }
 #### INIT ####
 # LOGS RELEVANT DATA TO 1password
 init() {
     if [[ -z $(op item get 'BranchSage Credentials' 2>/dev/null) ]]; then
-        prnl creating new 1Password item
+        prnl creating new 1password item
         op item create --category apicredential --title 'BranchSage Credentials' --vault 'Private'
     fi
     prsl "Jira Email >>>  "
     read email
     if [[ -n $email ]]; then
-        op item edit 'BranchSage Credentials' username=$email > /dev/null
+        op item edit 'BranchSage Credentials' jirausername=$email > /dev/null
+        export JIRA_USERNAME=$email
     fi
     prsl "Jira API Token >>>  "
     read token
     if [[ -n $token ]]; then
-        op item edit 'BranchSage Credentials' credential=$token > /dev/null
+        op item edit 'BranchSage Credentials' jiratoken=$token > /dev/null
+        export JIRA_TOKEN=$token
+    fi
+    prsl "Github API Token >>>  "
+    read gttok
+    if [[ -n $token ]]; then
+        op item edit 'BranchSage Credentials' githubtoken=$gttok > /dev/null
+        export GITHUB_TOKEN=$gttok
     fi
     prsl "AWS Login Preference (optional) >>>  "
     read awsid
     if [[ -n $awsid ]]; then
         op item edit 'BranchSage Credentials' awspref=$awsid > /dev/null
+        export AWS_PREF=$awsid
     fi
-    op item get 'BranchSage Credentials'
+    op item get 'BranchSage Credentials' | tail -n 4
 }
 #### HELP ####
 help() {
