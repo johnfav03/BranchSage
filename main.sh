@@ -2,7 +2,7 @@
 
 source ~/BranchSage/package.sh
 
-if [ -z $1 ]; then
+if [[ $1 == 'help' ]]; then
     help
 elif [[ $1 == 'init' ]]; then
     init

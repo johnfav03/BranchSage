@@ -323,33 +323,9 @@ init() {
 }
 #### HELP ####
 help() {
-    prnl the following commands are available to use
-    prnl to run them, type egs followed by the word in brackets
-    echo
-    echo '[prep]: nagivates to the appropriate directory, then activates the virtual'
-    echo 'environment and runs the aws login script, if not already logged in.'
-    echo 
-    echo '[show]: prints out the numbers of all of your active tickets, followed by'
-    echo 'the ticket status for each one.'
-    echo
-    echo '[trim]: searches through branches and deletes any that correspond to tickets'
-    echo 'that have been marked as Done in Jira.'
-    echo
-    echo '[grow]: searches through all active of your active Jira tickets, and creates'
-    echo 'new branches for any that dont yet have local branches.'
-    echo
-    echo '[swap]: now that your branch names are long, this takes a parameter, or if'
-    echo 'not given one, prints a prompt, and then uses the 4 number code for the ticket'
-    echo "to checkout the corresponding branch. '.' will checkout the develop branch."
-    echo
-    echo '[roll]: a shortcut for restoring changed files that you dont want changed: if'
-    echo 'no parameter is given, it will print a prompt with the changed files indexed,'
-    echo "then uses your input to restore that file. '.' will restore everything."
-    echo
-    echo '[sync]: pulls from the remote repository and runs make update on the develop'
-    echo 'branch, which prepares it for new branches. run this before running [grow].'
-    echo
-    prnl enjoy, and try '[logo]' for a fun surprise!
+    echo to use this tool, type egs followed by a command.
+    echo you can find a full list here: https://github.com/johnfav03/BranchSage
+    prnl try running 'egs logo' for a fun surprise!
 }
 
 
