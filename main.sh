@@ -24,6 +24,9 @@ elif [[ $1 == 'swap' ]]; then
     git_swap $2
 elif [[ $1 == 'rest' ]]; then
     git_rest
+elif [[ $1 == 'diff' ]]; then
+    git_diff
 else
-    prnl not a command.
+    prnl not a command
+    prnl run help to see all commands
 fi

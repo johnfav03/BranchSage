@@ -178,7 +178,7 @@ git_rest() {
     if [ -z "$(git status -s)" ]; then
         return
     fi
-    git_diff
+    git_file
     prsl "file # >>>  "
     read idx
     if [[ $idx == '.' ]]; then
@@ -192,7 +192,7 @@ git_rest() {
     prnl restoring $name
     git restore $line
 }
-git_diff() { # PRINTS CHANGED FILES, INDEXED
+git_file() { # PRINTS CHANGED FILES, INDEXED
     opts=$(git status -s | sed 's/^[^[:space:]]*[[:space:]]*[^[:space:]]*[[:space:]]*//')
     if [[ -n $opts ]]
     then
@@ -200,6 +200,20 @@ git_diff() { # PRINTS CHANGED FILES, INDEXED
         prnl changed files:
         echo $opts
     fi
+}
+
+git_diff() {
+    if [ -z "$(git status -s)" ]; then
+        return
+    fi
+    git_file
+    prsl "file # >>>  "
+    read idx
+    opts=$(git status -s | sed 's/^[^[:space:]]*[[:space:]]*[^[:space:]]*[[:space:]]*//')
+    line=$(echo $opts | sed "$idx q;d")
+    name=$(echo $line | sed 's|.*/||')
+    prnl opening $name
+    git diff $line
 }
 
 #### PREP ####
@@ -219,7 +233,6 @@ prep() {
 #### LOGO ####
 # PRINTS ASCII ART OF THE ENERGYSAGE LOGO
 logo() {
-    echo
     prnl '****************************************'
     prnl '*****************=.  .=*****************'
     prnl '***************-   ::   -+**************'
@@ -244,28 +257,37 @@ logo() {
     prnl '******************=  -******************'
     prnl '******************+  =******************'
     prnl '****************************************'
-    echo
 }
 
 #### INIT ####
-# LOGS RELEVANT DATA TO auth.txt
+# LOGS RELEVANT DATA TO 1password
 init() {
-    > ~/BranchSage/auth.txt
+    if [[ -z $(op item get 'BranchSage Credentials' 2>/dev/null) ]]; then
+        prnl creating new 1Password item
+        op item create --category apicredential --title 'BranchSage Credentials' --vault 'Private'
+    fi
     prsl "Jira Email >>>  "
     read email
-    echo $email >> ~/BranchSage/auth.txt
+    if [[ -n $email ]]; then
+        op item edit 'BranchSage Credentials' username=$email > /dev/null
+    fi
     prsl "Jira API Token >>>  "
     read token
-    echo $token >> ~/BranchSage/auth.txt
+    if [[ -n $token ]]; then
+        op item edit 'BranchSage Credentials' credential=$token > /dev/null
+    fi
     prsl "AWS Login Preference (optional) >>>  "
     read awsid
-    echo $awsid >> ~/BranchSage/auth.txt
+    if [[ -n $awsid ]]; then
+        op item edit 'BranchSage Credentials' awspref=$awsid > /dev/null
+    fi
+    op item get 'BranchSage Credentials'
 }
 
 # BASIC FUNCTIONS
-read_token() { echo $(cat ~/BranchSage/auth.txt | sed -n '1p'); }
-read_uname() { echo $(cat ~/BranchSage/auth.txt | sed -n '2p'); }
-read_awsid() { echo $(cat ~/BranchSage/auth.txt | sed -n '3p'); }
+read_token() { op item get 'BranchSage Credentials' --fields label=credential }
+read_uname() { op item get 'BranchSage Credentials' --fields label=username }
+read_awsid() { op item get 'BranchSage Credentials' --fields label=awspref }
 read_ticks() { cat ~/BranchSage/curr.txt; }
 prnl() { echo $fg[$txtcolor]$@$reset_color; }
 prsl() { echo -n $fg[$txtcolor]$@$reset_color; }
