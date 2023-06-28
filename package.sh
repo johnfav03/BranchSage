@@ -2,33 +2,48 @@
 autoload -U colors && colors
 txtcolor=yellow
 
+
 #### SHOW ####
 # PRINTS ACTIVE TICKET KEYS AND THEIR STATUSES
 jira_show() {
+    1pass_load
     ticks=$(read_ticks)
-    token=$(read_token)
-    uname=$(read_uname)
+    token=$JIRA_TOKEN
+    uname=$JIRA_UNAME
+    ghtok=$GITHUB_TOKEN
     currs=""
     while IFS= read -r tick; do 
+        prsl $tick:
         blob=$(curl -s -u $uname:$token -X GET -H "Content-Type: application/json" https://energysage.atlassian.net/rest/api/3/issue/$tick)
         stat=$(jq -r '.fields.status.name' <<< $blob)
-        prsl $tick:
+        if [[ $stat == "Awaiting Deployment" ]]; then
+            opts=$(git branch --format='%(refname:short)' | sed '/^develop$/d')
+            line=$(echo $opts | grep -E "$tick" | sed 's/^[[:blank:]]*//')
+            if [[ -n $line ]]; then
+                resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/pulls?state=closed&per_page=100&head=EnergySage:$line")
+                open=$(jq -r '.[].state' --jsonargs <<< $resp)
+                if [[ -n $open ]]; then
+                    stat='Merged'
+                fi
+            fi
+        fi
         echo ' '$stat
     done <<< $ticks
 }
 
+
 # UPDATES REGISTRY IN curr.txt WITH ACTIVE TICKETS
 jira_pull() {
+    1pass_load
     token=$(read_token)
-    uname=$(read_uname)
-    ticks=$(read_ticks)
+    uname=$JIRA_UNAME
+    ticks=$JIRA_TICKS
     encod=$(printf "%s" $uname | jq -s -R @uri)
     prnl updating local ticket registry
 	blob=$(curl -s -u $uname:$token -X GET -H "Content-Type: application/json" "https://energysage.atlassian.net/rest/api/3/search?jql=assignee=$encod")
     keys=$(jq -r '.issues[] | select(.fields.status.name != "Done") | .key' <<< $blob)
     echo $keys > ~/BranchSage/curr.txt
 }
-
 #### TRIM ####
 # REMOVES REMAINING BRANCHES FOR COMPLETED TICKETS
 git_trim() {
@@ -57,7 +72,6 @@ git_trim() {
         prnl no branches to trim
     fi
 }
-
 #### GROW ####
 # CREATES BRANCHES FOR ACTIVE TICKETS WITHOUT THEM
 git_grow () {
@@ -100,8 +114,9 @@ git_grow () {
     fi
 }
 jira_name() { # CREATES NAME FROM TICKET
-    token=$(read_token)
-    uname=$(read_uname)
+    1pass_load
+    token=$JIRA_TOKEN
+    uname=$JIRA_UNAME
     blob=$(curl -s -u $uname:$token -X GET -H "Content-Type: application/json" https://energysage.atlassian.net/rest/api/3/issue/$1)
     tags=$(jq -r '.key' <<< $blob)
     desc=$(jq -r '.fields.summary' <<< $blob)
@@ -113,10 +128,11 @@ jira_name() { # CREATES NAME FROM TICKET
 	echo $tags
 }
 
+
 #### SYNC ####
 # PREPS DEVELOP FOR NEW BRANCH USING EGS PROCESS
 git_sync() {
-    awsid=$(read_awsid)
+    awsid=$AWS_PREF
     if [[ $(git branch --show-current) != "develop" ]]; then
         if [ -z $(git status -s) ]; then
             prnl checking out develop
@@ -140,6 +156,7 @@ git_sync() {
     prnl running make update
 	make update
 }
+
 
 #### SWAP ####
 # TAKES ISSUE IDX OR PRINTS PROMPT TO SWITCH BRANCH
@@ -166,13 +183,25 @@ git_swap() {
     fi
     git checkout $line
 }
-git_opts() { # PRINTS BRANCH OPTS
+# PRINTS BRANCH OPTS
+git_opts() { 
     opts=$(git branch | sed -e '/^  develop$/d')
     prnl available branches:
 	echo $opts
 }
 
-#### ROLL ####
+
+# PRINTS CHANGED FILES, INDEXED
+git_file() { 
+    opts=$(git status -s | sed 's/^[^[:space:]]*[[:space:]]*[^[:space:]]*[[:space:]]*//')
+    if [[ -n $opts ]]
+    then
+        opts=$(echo $opts | nl -w1 -s": " -)
+        prnl changed files:
+        echo $opts
+    fi
+}
+#### REST ####
 # TAKES FILE IDX OR PRINTS PROMPT TO RESTORE FILE
 git_rest() {
     if [ -z "$(git status -s)" ]; then
@@ -192,16 +221,8 @@ git_rest() {
     prnl restoring $name
     git restore $line
 }
-git_file() { # PRINTS CHANGED FILES, INDEXED
-    opts=$(git status -s | sed 's/^[^[:space:]]*[[:space:]]*[^[:space:]]*[[:space:]]*//')
-    if [[ -n $opts ]]
-    then
-        opts=$(echo $opts | nl -w1 -s": " -)
-        prnl changed files:
-        echo $opts
-    fi
-}
-
+#### DIFF ####
+# TODO
 git_diff() {
     if [ -z "$(git status -s)" ]; then
         return
@@ -216,10 +237,22 @@ git_diff() {
     git diff $line
 }
 
+
+# TODO
+1pass_load() {
+    if [[ -z $(echo $JIRA_UNAME) ]]; then
+        prnl signing in to 1password
+        export JIRA_TOKEN=$(op item get 'BranchSage Credentials' --fields label=credential)
+        export JIRA_UNAME=$(op item get 'BranchSage Credentials' --fields label=username)
+        export AWS_PREF=$(op item get 'BranchSage Credentials' --fields label=awspref)
+    fi
+}
+
+
 #### PREP ####
 # SETS UP DIRECTORY, VENV, AND AWS
 prep() {
-    awsid=$(read_awsid)
+    awsid=$AWS_PREF
     prnl opening directory
 	cd ~/Dev/es-project/es-site/es
 	prnl starting virtual env
@@ -229,7 +262,6 @@ prep() {
 		source ~/Dev/es-dev-utils/aws_login.sh $awsid
 	fi
 }
-
 #### LOGO ####
 # PRINTS ASCII ART OF THE ENERGYSAGE LOGO
 logo() {
@@ -258,7 +290,6 @@ logo() {
     prnl '******************+  =******************'
     prnl '****************************************'
 }
-
 #### INIT ####
 # LOGS RELEVANT DATA TO 1password
 init() {
@@ -283,15 +314,6 @@ init() {
     fi
     op item get 'BranchSage Credentials'
 }
-
-# BASIC FUNCTIONS
-read_token() { op item get 'BranchSage Credentials' --fields label=credential }
-read_uname() { op item get 'BranchSage Credentials' --fields label=username }
-read_awsid() { op item get 'BranchSage Credentials' --fields label=awspref }
-read_ticks() { cat ~/BranchSage/curr.txt; }
-prnl() { echo $fg[$txtcolor]$@$reset_color; }
-prsl() { echo -n $fg[$txtcolor]$@$reset_color; }
-
 #### HELP ####
 help() {
     prnl the following commands are available to use
@@ -322,3 +344,9 @@ help() {
     echo
     prnl enjoy, and try '[logo]' for a fun surprise!
 }
+
+
+# BASIC FUNCTIONS
+read_ticks() { cat ~/BranchSage/curr.txt; }
+prnl() { echo $fg[$txtcolor]$@$reset_color; }
+prsl() { echo -n $fg[$txtcolor]$@$reset_color; }
