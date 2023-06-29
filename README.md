@@ -24,24 +24,24 @@ If you've followed the previous steps, you can run any of the following commands
 $ egs prep
 ```
 Here are all the available commands:
-###### [prep] ##### 
+##### [prep] ##### 
 
 prep sets up your working environment for you; it navigates to the `es-site` directory, it opens your virtual environment, and it runs the AWS Login script if you aren't already logged in.
-###### [show] ##### 
+##### [show] ##### 
 
 show lists out a basic list of the tickets considered 'active' and stored in the local registry. Alongside each ticket, it prints the current status of the ticket as displayed in Jira. As a note, this intentionally doesn't pull new tickets from Jira, only grow and trim do.
-###### [trim] ##### 
+##### [trim] ##### 
 
 trim helps automate your branches by pulling from Jira and updating the local registry by removing any tickets that are marked 'Done'. It then automatically looks for branches that follow the uppercase letters, hyphen, 4 digits, hyphen pattern and cannot be found in the local registry. If found, these branches are deleted.
-###### [grow] ##### 
+##### [grow] ##### 
 
 grow is the opposite of trim; it also pulls from Jira to update the local registry, and then for any tickets that don't have corresponding branches, it will create a new branch with a name generated automatically by the ticket name. As a note, it won't change existing branch names if they follow the EnergySage naming scheme. Remember to run sync first!
-###### [swap] ##### 
+##### [swap] ##### 
 
 swap is a tool to help facilitate quick navigation between branches that correspond to tickets; after using grow, branch names can get quite long. this command takes a parameter of a 4 digit number, or prints a prompt to ask for one if left blank. It then checks out the branch that matches that ticket number. By default, entering '.' as either the parameter or in the prompt will take you to the `develop` branch.
-###### [rest] ##### 
+##### [rest] ##### 
 
 roll is meant to make restoring files through git quicker; instead of typing the whole file path, this command prints all changed files indexed, then prints a prompt to take in an index. It then restores that file to it's state from the previous commit. By default, entering '.' in the prompt will restore all files.
-###### [sync] ##### 
+##### [sync] ##### 
 
 sync is meant to be run before making a new branch, as it synchronizes `develop` with the main codebase and runs `make update`.
