@@ -26,6 +26,18 @@ jira_show() {
                     stat='Merged'
                 fi
             fi
+        elif [[ $stat == "Code Review" ]]; then
+            opts=$(git branch --format='%(refname:short)' | sed '/^develop$/d')
+            line=$(echo $opts | grep -E "$tick" | sed 's/^[[:blank:]]*//')
+            if [[ -n $line ]]; then
+                resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/pulls?state=open&per_page=100&head=EnergySage:$line")
+                indx=$(jq -r '.[].number' --jsonargs <<< $resp)
+                resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/issues/$indx/comments")
+                ncom=$(echo $resp | jq 'map(select(.user.login != "swarmia[bot]")) | length')
+                resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/issues/$indx/comments")
+                nres=$(echo $resp | jq 'length')
+                stat+=' ('$(($ncom + $nres))')'
+            fi
         fi
         echo $stat
     done <<< $ticks
@@ -35,9 +47,8 @@ jira_show() {
 # UPDATES REGISTRY IN curr.txt WITH ACTIVE TICKETS
 jira_pull() {
     1pass_load
-    token=$(read_token)
+    token=$JIRA_TOKEN
     uname=$JIRA_UNAME
-    ticks=$JIRA_TICKS
     encod=$(printf "%s" $uname | jq -s -R @uri)
     prnl updating local ticket registry
 	blob=$(curl -s -u $uname:$token -X GET -H "Content-Type: application/json" "https://energysage.atlassian.net/rest/api/3/search?jql=assignee=$encod")
@@ -51,7 +62,7 @@ git_trim() {
     brans=$(git branch --format='%(refname:short)' | sed '/^[A-Z]\{1,\}-[0-9]\{4\}-.*$/!d')
     count=0
     if [[ $(git branch --show-current) != "develop" ]]; then
-        if [ -z $(git status -s) ]; then
+        if [[ -z $(git status -s) ]]; then
             prnl switching to develop
             git checkout develop
         else
@@ -156,7 +167,7 @@ git_swap() {
 	idx=$1
 	if [ -z $idx ]; then
         git_opts
-        opts=$(git branch --format='%(refname:short)' | sed '/^develop$/d')
+        opts=$(git branch --format='%(refname:short)' | sed '/develop/d')
         prsl "issue # >>>  "
         read idx
         if [ -z $idx ]; then
@@ -176,7 +187,7 @@ git_swap() {
 }
 # PRINTS BRANCH OPTS
 git_opts() { 
-    opts=$(git branch | sed -e '/^  develop$/d')
+    opts=$(git branch | sed -e '/develop$/d')
     prnl available branches:
 	echo $opts
 }

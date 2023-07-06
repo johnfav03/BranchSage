@@ -27,6 +27,5 @@ elif [[ $1 == 'rest' ]]; then
 elif [[ $1 == 'diff' ]]; then
     git_diff
 else
-    prnl not a command
     prnl run help to see all commands
 fi
