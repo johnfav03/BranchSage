@@ -1,5 +1,5 @@
 # BranchSage #
-This is a script that's meant to improve workplace efficiency for EnergySage by connecting to the Jira API to maintain a local registry of active tickets and help automatically name branches. In addition, the goal was to automate company standard processes for using git, creating new branches, and more.
+This is a script that's meant to improve workplace efficiency for EnergySage by connecting to the Jira API to maintain a local registry of active tickets and help automatically name branches. It also connects to the GitHub API to assist in the goal of automating company standard processes for git, creating new branches, and more.
 ### Prerequisites ###
 You'll need 3 pieces of information for the startup script - your email that Jira uses, which likely follows the format of first.last@energysage.com. The second piece you need is a Jira API Token. To get an API Token for your account, follow this link: [Jira API Tokens](https://id.atlassian.com/manage-profile/security/api-tokens). Then, click the 'Create API Token'. Give it a label, click 'Create', then click 'Copy'. Write this down for the setup. The final piece is a GitHub API Token, which can be generated here: [GitHub API Tokens](https://github.com/settings/tokens). Click 'Generate new token', then 'classic', and copy the API Key. Make sure to write this down for setup.
 ### Setup ###
@@ -41,7 +41,16 @@ grow is the opposite of trim; it also pulls from Jira to update the local regist
 swap is a tool to help facilitate quick navigation between branches that correspond to tickets; after using grow, branch names can get quite long. this command takes a parameter of a 4 digit number, or prints a prompt to ask for one if left blank. It then checks out the branch that matches that ticket number. By default, entering '.' as either the parameter or in the prompt will take you to the `develop` branch.
 #### [rest] #### 
 
-roll is meant to make restoring files through git quicker; instead of typing the whole file path, this command prints all changed files indexed, then prints a prompt to take in an index. It then restores that file to it's state from the previous commit. By default, entering '.' in the prompt will restore all files.
+rest is meant to make restoring files through git quicker; instead of typing the whole file path, this command prints all changed files indexed, then prints a prompt to take in an index. It then restores that file to it's state from the previous commit. By default, entering '.' in the prompt will restore all files.
+#### [diff] #### 
+
+diff accomplishes the same task as rest, but simply shows you the differences in each file as opposed to restoring them outright.
 #### [sync] #### 
 
 sync is meant to be run before making a new branch, as it synchronizes `develop` with the main codebase and runs `make update`.
+#### [init] ####
+
+init is the tool that's used to set the needed credentials, including usernames, preferences, and API Tokens. You can run init after populating your info for the first time, and leaving an input blank will leave it as its previous value. You can use this utility to change tokens or usernames if the need ever arises.
+#### [logo] ####
+
+a fun surprise!
