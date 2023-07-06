@@ -6,7 +6,9 @@ txtcolor=yellow
 #### SHOW ####
 # PRINTS ACTIVE TICKET KEYS AND THEIR STATUSES
 jira_show() {
-    1pass_load
+    if 1pass_load; then
+        return
+    fi
     ticks=$(read_ticks)
     token=$JIRA_TOKEN
     uname=$JIRA_UNAME
@@ -46,7 +48,9 @@ jira_show() {
 
 # UPDATES REGISTRY IN curr.txt WITH ACTIVE TICKETS
 jira_pull() {
-    1pass_load
+    if 1pass_load; then
+        return
+    fi
     token=$JIRA_TOKEN
     uname=$JIRA_UNAME
     encod=$(printf "%s" $uname | jq -s -R @uri)
@@ -124,7 +128,9 @@ git_grow () {
     fi
 }
 jira_name() { # CREATES NAME FROM TICKET
-    1pass_load
+    if 1pass_load; then
+        return
+    fi
     token=$JIRA_TOKEN
     uname=$JIRA_UNAME
     blob=$(curl -s -u $uname:$token -X GET -H "Content-Type: application/json" https://energysage.atlassian.net/rest/api/3/issue/$1)
@@ -142,7 +148,9 @@ jira_name() { # CREATES NAME FROM TICKET
 #### SYNC ####
 # PREPS DEVELOP FOR NEW BRANCH USING EGS PROCESS
 git_sync() {
-    1pass_load
+    if 1pass_load; then
+        return
+    fi
     awsid=$AWS_PREF
     if [[ -n $(git status -s) ]]; then
         prnl stash or commit changes
@@ -254,10 +262,14 @@ git_diff() {
     if [[ -z $(echo $JIRA_UNAME) ]]; then
         prnl sign in to 1password
         export JIRA_UNAME=$(op item get 'BranchSage Credentials' --fields label=jirausername)
+        if [[ -z $(echo $JIRA_UNAME) ]]; then
+            return 0
+        fi
         export JIRA_TOKEN=$(op item get 'BranchSage Credentials' --fields label=jiratoken)
         export GITHUB_TOKEN=$(op item get 'BranchSage Credentials' --fields label=githubtoken)
         export AWS_PREF=$(op item get 'BranchSage Credentials' --fields label=awspref)
     fi
+    return 1
 }
 
 
