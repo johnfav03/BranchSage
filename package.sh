@@ -34,7 +34,7 @@ jira_show() {
                 indx=$(jq -r '.[].number' --jsonargs <<< $resp)
                 resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/issues/$indx/comments")
                 ncom=$(echo $resp | jq 'map(select(.user.login != "swarmia[bot]")) | length')
-                resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/issues/$indx/comments")
+                resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/pulls/$indx/reviews")
                 nres=$(echo $resp | jq 'length')
                 stat+=' ('$(($ncom + $nres))')'
             fi

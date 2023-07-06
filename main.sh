@@ -27,5 +27,5 @@ elif [[ $1 == 'rest' ]]; then
 elif [[ $1 == 'diff' ]]; then
     git_diff
 else
-    prnl run help to see all commands
+    echo run help to see all commands
 fi
