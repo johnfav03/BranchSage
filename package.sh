@@ -102,11 +102,13 @@ git_grow () {
         prnl stash or commit changes
         return
     fi
-    git_sync
     while IFS= read -r tick; do
         if [[ $brans != *"$tick"* ]]; then
             if [[ $(git branch --show-current) != "develop" ]]; then
                 git restore .
+            fi
+            if [[ $count == 0 ]]; then
+                git_sync
             fi
             name=$(jira_name $tick)
             prnl creating branch $name
@@ -140,6 +142,7 @@ jira_name() { # CREATES NAME FROM TICKET
 #### SYNC ####
 # PREPS DEVELOP FOR NEW BRANCH USING EGS PROCESS
 git_sync() {
+    1pass_load
     awsid=$AWS_PREF
     if [[ -n $(git status -s) ]]; then
         prnl stash or commit changes
@@ -148,7 +151,7 @@ git_sync() {
     cd ~/Dev/es-project/es-site/es
     prnl pulling upstream
 	git pull --ff-only
-	if [ -z $(echo $AWS_PROFILE) ]; then
+	if aws sts get-caller-identity 2>&1 | grep -q "Unable to locate"; then
 		prnl login to aws
 		source ~/Dev/es-dev-utils/aws_login.sh $awsid
 	fi
@@ -266,7 +269,7 @@ prep() {
 	cd ~/Dev/es-project/es-site/es
 	prnl starting virtual env
 	source ~/Dev/es-project/venv/bin/activate
-	if [ -z $(echo $AWS_PROFILE) ]; then
+	if aws sts get-caller-identity 2>&1 | grep -q "Unable to locate"; then
 		prnl login to aws
 		source ~/Dev/es-dev-utils/aws_login.sh $awsid
 	fi
@@ -338,7 +341,6 @@ help() {
     echo you can find a full list here: https://github.com/johnfav03/BranchSage
     prnl try running 'egs logo' for a fun surprise!
 }
-
 
 # BASIC FUNCTIONS
 read_ticks() { cat ~/BranchSage/curr.txt; }
