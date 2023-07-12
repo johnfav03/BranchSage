@@ -335,7 +335,7 @@ init() {
     fi
     prsl "Github API Token >>>  "
     read gttok
-    if [[ -n $token ]]; then
+    if [[ -n $gttok ]]; then
         op item edit 'BranchSage Credentials' githubtoken=$gttok > /dev/null
         export GITHUB_TOKEN=$gttok
     fi
