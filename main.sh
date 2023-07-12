@@ -23,7 +23,7 @@ elif [[ $1 == 'sync' ]]; then
 elif [[ $1 == 'swap' ]]; then
     git_swap $2
 elif [[ $1 == 'rest' ]]; then
-    git_rest
+    git_rest $2
 elif [[ $1 == 'diff' ]]; then
     git_diff
 else

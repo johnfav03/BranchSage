@@ -159,7 +159,7 @@ git_sync() {
     cd ~/Dev/es-project/es-site/es
     prnl pulling upstream
 	git pull --ff-only
-	if aws sts get-caller-identity 2>&1 | grep -q "Unable to locate"; then
+	if aws sts get-caller-identity 2>&1 | grep -q -e "Unable to locate\|Token has expired"; then
 		prnl login to aws
 		source ~/Dev/es-dev-utils/aws_login.sh $awsid
 	fi
@@ -220,11 +220,14 @@ git_rest() {
     if [ -z "$(git status -s)" ]; then
         return
     fi
-    git_file
-    prsl "file # >>>  "
-    read idx
+    idx=$1
     if [ -z $idx ]; then
-        return
+        git_file
+        prsl "file # >>>  "
+        read idx
+        if [ -z $idx ]; then
+            return
+        fi
     fi
     if [[ $idx == '.' ]]; then
         line=.
@@ -281,7 +284,7 @@ prep() {
 	cd ~/Dev/es-project/es-site/es
 	prnl starting virtual env
 	source ~/Dev/es-project/venv/bin/activate
-	if aws sts get-caller-identity 2>&1 | grep -q "Unable to locate"; then
+	if aws sts get-caller-identity 2>&1 | grep -q "Unable to locate\|Token has expired"; then
 		prnl login to aws
 		source ~/Dev/es-dev-utils/aws_login.sh $awsid
 	fi
