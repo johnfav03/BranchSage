@@ -325,7 +325,7 @@ init() {
     read email
     if [[ -n $email ]]; then
         op item edit 'BranchSage Credentials' jirausername=$email > /dev/null
-        export JIRA_USERNAME=$email
+        export JIRA_UNAME=$email
     fi
     prsl "Jira API Token >>>  "
     read token
