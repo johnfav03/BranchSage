@@ -29,7 +29,7 @@ Here are all the available commands:
 prep sets up your working environment for you; it navigates to the `es-site` directory, it opens your virtual environment, and it runs the AWS Login script if you aren't already logged in.
 #### [show] #### 
 
-show lists out a basic list of the tickets considered 'active' and stored in the local registry. Alongside each ticket, it prints the current status of the ticket as displayed in Jira. As a note, this intentionally doesn't pull new tickets from Jira, only grow and trim do. Additionally, it will show you the number of comments on a pull request in 'Code Review' and it will show you if a ticket labeled 'Awaiting Deployment' has been merged on GitHub.
+show lists out a basic list of the tickets considered 'active' and stored in the local registry. Alongside each ticket, it prints the current status of the ticket as displayed in Jira. As a note, this intentionally doesn't pull new tickets from Jira, only grow and trim do. Additionally, it will show you the number of comments adn reviews on a pull request in 'Code Review' and it will show you if a ticket labeled 'Awaiting Deployment' has been merged on GitHub by displaying the status as 'Merged'.
 #### [trim] #### 
 
 trim helps automate your branches by pulling from Jira and updating the local registry by removing any tickets that are marked 'Done'. It then automatically looks for branches that follow the uppercase letters, hyphen, 4 digits, hyphen pattern and cannot be found in the local registry. If found, these branches are deleted.
@@ -47,10 +47,10 @@ rest is meant to make restoring files through git quicker; instead of typing the
 diff accomplishes the same task as rest, but simply shows you the differences in each file as opposed to restoring them outright.
 #### [sync] #### 
 
-sync is meant to be run before making a new branch, as it synchronizes `develop` with the main codebase and runs `make update`.
+sync is meant to be run before making a new branch, as it synchronizes `develop` with the remote codebase and runs `make update`.
 #### [init] ####
 
-init is the tool that's used to set the needed credentials, including usernames, preferences, and API Tokens. You can run init after populating your info for the first time, and leaving an input blank will leave it as its previous value. You can use this utility to change tokens or usernames if the need ever arises.
+init is the tool that's used to set the needed credentials, including usernames, preferences, and API Tokens. You can run init after populating your info for the first time, and leaving an input blank will leave it as its previous value. You can use this utility to change tokens or usernames if the need ever arises. It works by storing and retrieving your information in a 1Password entry.
 #### [logo] ####
 
 a fun surprise!

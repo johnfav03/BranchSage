@@ -13,9 +13,15 @@ jira_show() {
     token=$JIRA_TOKEN
     uname=$JIRA_UNAME
     ghtok=$GITHUB_TOKEN
-    currs=""
-    while IFS= read -r tick; do 
-        prsl $tick': '
+    while IFS= read -r tick; do
+        stat=$(print_tick $tick &)
+        echo $stat
+    done <<< $ticks
+    wait
+}
+print_tick() {
+    tick=$1
+    prsl $tick': '
         blob=$(curl -s -u $uname:$token -X GET -H "Content-Type: application/json" https://energysage.atlassian.net/rest/api/3/issue/$tick)
         stat=$(jq -r '.fields.status.name' <<< $blob)
         if [[ $stat == "Awaiting Deployment" ]]; then
@@ -41,8 +47,7 @@ jira_show() {
                 stat+=' ('$(($ncom + $nres))')'
             fi
         fi
-        echo $stat
-    done <<< $ticks
+    echo $stat
 }
 
 
