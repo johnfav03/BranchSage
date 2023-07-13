@@ -1,27 +1,27 @@
-#!/usr/bin/env zsh
+#!/bin/zsh
+
 autoload -U colors && colors
 txtcolor=yellow
 
-
 #### SHOW ####
 # PRINTS ACTIVE TICKET KEYS AND THEIR STATUSES
-jira_show() {
-    if 1pass_load; then
+_jira_show() {
+    if _1pass_load; then
         return
     fi
-    ticks=$(read_ticks)
+    ticks=$(_read_ticks)
     token=$JIRA_TOKEN
     uname=$JIRA_UNAME
     ghtok=$GITHUB_TOKEN
     while IFS= read -r tick; do
-        stat=$(print_tick $tick &)
+        stat=$(_print_tick $tick &)
         echo $stat
     done <<< $ticks
     wait
 }
-print_tick() {
+_print_tick() {
     tick=$1
-    prsl $tick': '
+    _prsl $tick': '
         blob=$(curl -s -u $uname:$token -X GET -H "Content-Type: application/json" https://energysage.atlassian.net/rest/api/3/issue/$tick)
         stat=$(jq -r '.fields.status.name' <<< $blob)
         if [[ $stat == "Awaiting Deployment" ]]; then
@@ -52,30 +52,30 @@ print_tick() {
 
 
 # UPDATES REGISTRY IN curr.txt WITH ACTIVE TICKETS
-jira_pull() {
-    if 1pass_load; then
+_jira_pull() {
+    if _1pass_load; then
         return
     fi
     token=$JIRA_TOKEN
     uname=$JIRA_UNAME
     encod=$(printf "%s" $uname | jq -s -R @uri)
-    prnl updating local ticket registry
+    _prnl updating local ticket registry
 	blob=$(curl -s -u $uname:$token -X GET -H "Content-Type: application/json" "https://energysage.atlassian.net/rest/api/3/search?jql=assignee=$encod")
     keys=$(jq -r '.issues[] | select(.fields.status.name != "Done") | .key' <<< $blob)
     echo $keys > ~/BranchSage/curr.txt
 }
 #### TRIM ####
 # REMOVES REMAINING BRANCHES FOR COMPLETED TICKETS
-git_trim() {
-    ticks=$(read_ticks)
+_git_trim() {
+    ticks=$(_read_ticks)
     brans=$(git branch --format='%(refname:short)' | sed '/^[A-Z]\{1,\}-[0-9]\{4\}-.*$/!d')
     count=0
     if [[ $(git branch --show-current) != "develop" ]]; then
         if [[ -z $(git status -s) ]]; then
-            prnl switching to develop
+            _prnl switching to develop
             git checkout develop
         else
-            prnl stash or commit changes
+            _prnl stash or commit changes
             return
         fi
     fi
@@ -87,28 +87,28 @@ git_trim() {
         fi
     done <<< $brans
     if [[ $count -gt 0 ]]; then
-        prnl branches trimmed!
+        _prnl branches trimmed!
     else
-        prnl no branches to trim
+        _prnl no branches to trim
     fi
 }
 #### GROW ####
 # CREATES BRANCHES FOR ACTIVE TICKETS WITHOUT THEM
-git_grow () {
-    ticks=$(read_ticks)
+_git_grow () {
+    ticks=$(_read_ticks)
     brans=$(git branch --format='%(refname:short)' | sed '/^develop$/d')
     count=0
     if [[ $(git branch --show-current) != "develop" ]]; then
         if [ -z $(git status -s) ]; then
-            prnl switching to develop
+            _prnl switching to develop
             git checkout develop
         else
-            prnl stash or commit changes
+            _prnl stash or commit changes
             return
         fi
     fi
     if [[ -n $(git status -s) ]]; then
-        prnl stash or commit changes
+        _prnl stash or commit changes
         return
     fi
     while IFS= read -r tick; do
@@ -117,23 +117,23 @@ git_grow () {
                 git restore .
             fi
             if [[ $count == 0 ]]; then
-                git_sync
+                _git_sync
             fi
-            name=$(jira_name $tick)
-            prnl creating branch $name
+            name=$(_jira_name $tick)
+            _prnl creating branch $name
             git checkout -b $name
             git push -u origin HEAD
             ((count++))
         fi
     done <<< $ticks
     if [[ $count -gt 0 ]]; then
-        prnl branches grown!
+        _prnl branches grown!
     else
-        prnl no branches to grow
+        _prnl no branches to grow
     fi
 }
-jira_name() { # CREATES NAME FROM TICKET
-    if 1pass_load; then
+_jira_name() { # CREATES NAME FROM TICKET
+    if _1pass_load; then
         return
     fi
     token=$JIRA_TOKEN
@@ -152,39 +152,39 @@ jira_name() { # CREATES NAME FROM TICKET
 
 #### SYNC ####
 # PREPS DEVELOP FOR NEW BRANCH USING EGS PROCESS
-git_sync() {
-    if 1pass_load; then
+_git_sync() {
+    if _1pass_load; then
         return
     fi
     awsid=$AWS_PREF
     if [[ -n $(git status -s) ]]; then
-        prnl stash or commit changes
+        _prnl stash or commit changes
         return
     fi
     cd ~/Dev/es-project/es-site/es
-    prnl pulling upstream
+    _prnl pulling upstream
 	git pull --ff-only
 	if aws sts get-caller-identity 2>&1 | grep -q -e "Unable to locate\|Token has expired"; then
-		prnl login to aws
+		_prnl login to aws
 		source ~/Dev/es-dev-utils/aws_login.sh $awsid
 	fi
-    prnl running make update
+    _prnl running make update
 	make update
 }
 
 
 #### SWAP ####
 # TAKES ISSUE IDX OR PRINTS PROMPT TO SWITCH BRANCH
-git_swap() {
+_git_swap() {
     if [[ -n $(git status -s) ]]; then
-        prnl stash or commit changes
+        _prnl stash or commit changes
         return
     fi
 	idx=$1
 	if [ -z $idx ]; then
-        git_opts
+        _git_opts
         opts=$(git branch --format='%(refname:short)' | sed '/develop/d')
-        prsl "issue # >>>  "
+        _prsl "issue # >>>  "
         read idx
         if [ -z $idx ]; then
             return
@@ -195,40 +195,40 @@ git_swap() {
     else
         line=$(echo $opts | grep -E "$idx" | sed 's/^[[:blank:]]*//')
         if [ -z $line ]; then
-            prnl branch not found
+            _prnl branch not found
             return
         fi
     fi
     git checkout $line
 }
 # PRINTS BRANCH OPTS
-git_opts() { 
+_git_opts() { 
     opts=$(git branch | sed -e '/develop$/d')
-    prnl available branches:
+    _prnl available branches:
 	echo $opts
 }
 
 
 # PRINTS CHANGED FILES, INDEXED
-git_file() { 
+_git_file() { 
     opts=$(git status -s | sed 's/^[^[:space:]]*[[:space:]]*[^[:space:]]*[[:space:]]*//')
     if [[ -n $opts ]]
     then
         opts=$(echo $opts | nl -w1 -s": " -)
-        prnl changed files:
+        _prnl changed files:
         echo $opts
     fi
 }
 #### REST ####
 # TAKES FILE IDX OR PRINTS PROMPT TO RESTORE FILE
-git_rest() {
+_git_rest() {
     if [ -z "$(git status -s)" ]; then
         return
     fi
     idx=$1
     if [ -z $idx ]; then
-        git_file
-        prsl "file # >>>  "
+        _git_file
+        _prsl "file # >>>  "
         read idx
         if [ -z $idx ]; then
             return
@@ -242,17 +242,17 @@ git_rest() {
         line=$(echo $opts | sed "$idx q;d")
         name=$(echo $line | sed 's|.*/||')
     fi
-    prnl restoring $name
+    _prnl restoring $name
     git restore $line
 }
 #### DIFF ####
 # TODO
-git_diff() {
+_git_diff() {
     if [ -z "$(git status -s)" ]; then
         return
     fi
-    git_file
-    prsl "file # >>>  "
+    _git_file
+    _prsl "file # >>>  "
     read idx
     if [ -z $idx ]; then
         return
@@ -260,15 +260,15 @@ git_diff() {
     opts=$(git status -s | sed 's/^[^[:space:]]*[[:space:]]*[^[:space:]]*[[:space:]]*//')
     line=$(echo $opts | sed "$idx q;d")
     name=$(echo $line | sed 's|.*/||')
-    prnl opening $name
+    _prnl opening $name
     git diff $line
 }
 
 
 # TODO
-1pass_load() {
+_1pass_load() {
     if [[ -z $(echo $JIRA_UNAME) ]]; then
-        prnl sign in to 1password
+        _prnl sign in to 1password
         export JIRA_UNAME=$(op item get 'BranchSage Credentials' --fields label=jirausername)
         if [[ -z $(echo $JIRA_UNAME) ]]; then
             return 0
@@ -283,71 +283,71 @@ git_diff() {
 
 #### PREP ####
 # SETS UP DIRECTORY, VENV, AND AWS
-prep() {
+_egs_prep() {
     awsid=$AWS_PREF
-    prnl opening directory
+    _prnl opening directory
 	cd ~/Dev/es-project/es-site/es
-	prnl starting virtual env
+	_prnl starting virtual env
 	source ~/Dev/es-project/venv/bin/activate
 	if aws sts get-caller-identity 2>&1 | grep -q "Unable to locate\|Token has expired"; then
-		prnl login to aws
+		_prnl login to aws
 		source ~/Dev/es-dev-utils/aws_login.sh $awsid
 	fi
 }
 #### LOGO ####
 # PRINTS ASCII ART OF THE ENERGYSAGE LOGO
-logo() {
-    prnl '****************************************'
-    prnl '*****************=.  .=*****************'
-    prnl '**************+-   ::   -+**************'
-    prnl '************+-   :+**+:   -+************'
-    prnl '***********=   :+******+:   =***********'
-    prnl '*********=.  :+*****:****+:  .=*********'
-    prnl '*******+:  .+******:  *****+.  :+*******'
-    prnl '******+.  -*******- = -******-   =******'
-    prnl '*****=  .+*******= -= =*******+.  =*****'
-    prnl '****=  .+*******+ :*= +********+.  =****'
-    prnl '***+   +*******= -**=::: :******+.  +***'
-    prnl '***-  -*******+ :=****=: +*******-  -***'
-    prnl '***-  =*******: :::=**- =********=  -***'
-    prnl '***+  :**********+ =*: +*********:  +***'
-    prnl '****.  =*********= =- =*********=  .****'
-    prnl '****+   =********- = -*********=   +****'
-    prnl '*****+.  :+*******  :********+:  .+*****'
-    prnl '*******=   :=******:*******=:   =*******'
-    prnl '*********=.   .:-=++++=-:.   .=*********'
-    prnl '***********+=:.          .:=+***********'
-    prnl '****************++-  -++****************'
-    prnl '******************=  =******************'
-    prnl '******************=  =******************'
-    prnl '****************************************'
+_egs_logo() {
+    _prnl '****************************************'
+    _prnl '*****************=.  .=*****************'
+    _prnl '**************+-   ::   -+**************'
+    _prnl '************+-   :+**+:   -+************'
+    _prnl '***********=   :+******+:   =***********'
+    _prnl '*********=.  :+*****:****+:  .=*********'
+    _prnl '*******+:  .+******:  *****+.  :+*******'
+    _prnl '******+.  -*******- = -******-   =******'
+    _prnl '*****=  .+*******= -= =*******+.  =*****'
+    _prnl '****=  .+*******+ :*= +********+.  =****'
+    _prnl '***+   +*******= -**=::: :******+.  +***'
+    _prnl '***-  -*******+ :=****=: +*******-  -***'
+    _prnl '***-  =*******: :::=**- =********=  -***'
+    _prnl '***+  :**********+ =*: +*********:  +***'
+    _prnl '****.  =*********= =- =*********=  .****'
+    _prnl '****+   =********- = -*********=   +****'
+    _prnl '*****+.  :+*******  :********+:  .+*****'
+    _prnl '*******=   :=******:*******=:   =*******'
+    _prnl '*********=.   .:-=++++=-:.   .=*********'
+    _prnl '***********+=:.          .:=+***********'
+    _prnl '****************++-  -++****************'
+    _prnl '******************=  =******************'
+    _prnl '******************=  =******************'
+    _prnl '****************************************'
 }
 #### INIT ####
 # LOGS RELEVANT DATA TO 1password
-init() {
+_egs_init() {
     if [[ -z $(op item get 'BranchSage Credentials' 2>/dev/null) ]]; then
-        prnl creating new 1password item
+        _prnl creating new 1password item
         op item create --category apicredential --title 'BranchSage Credentials' --vault 'Private'
     fi
-    prsl "Jira Email >>>  "
+    _prsl "Jira Email >>>  "
     read email
     if [[ -n $email ]]; then
         op item edit 'BranchSage Credentials' jirausername=$email > /dev/null
         export JIRA_UNAME=$email
     fi
-    prsl "Jira API Token >>>  "
+    _prsl "Jira API Token >>>  "
     read token
     if [[ -n $token ]]; then
         op item edit 'BranchSage Credentials' jiratoken=$token > /dev/null
         export JIRA_TOKEN=$token
     fi
-    prsl "Github API Token >>>  "
+    _prsl "Github API Token >>>  "
     read gttok
     if [[ -n $gttok ]]; then
         op item edit 'BranchSage Credentials' githubtoken=$gttok > /dev/null
         export GITHUB_TOKEN=$gttok
     fi
-    prsl "AWS Login Preference (optional) >>>  "
+    _prsl "AWS Login Preference (optional) >>>  "
     read awsid
     if [[ -n $awsid ]]; then
         op item edit 'BranchSage Credentials' awspref=$awsid > /dev/null
@@ -356,13 +356,13 @@ init() {
     op item get 'BranchSage Credentials' | tail -n 4
 }
 #### HELP ####
-help() {
+_egs_help() {
     echo to use this tool, type egs followed by a command.
     echo you can find a full list here: https://github.com/johnfav03/BranchSage
-    prnl try running 'egs logo' for a fun surprise!
+    _prnl try running 'egs logo' for a fun surprise!
 }
 
 # BASIC FUNCTIONS
-read_ticks() { cat ~/BranchSage/curr.txt; }
-prnl() { echo $fg[$txtcolor]$@$reset_color; }
-prsl() { echo -n $fg[$txtcolor]$@$reset_color; }
+_read_ticks() { cat ~/BranchSage/curr.txt; }
+_prnl() { echo $fg[$txtcolor]$@$reset_color; }
+_prsl() { echo -n $fg[$txtcolor]$@$reset_color; }
