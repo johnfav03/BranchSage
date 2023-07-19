@@ -40,7 +40,9 @@ _print_tick() {
             if [[ -n $line ]]; then
                 resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/pulls?state=open&per_page=100&head=EnergySage:$line")
                 indx=$(jq -r '.[].number' --jsonargs <<< $resp)
-                if [[ -n $indx ]]; then
+                if [ -z $indx ]; then
+                    stat+=" (no PR)"
+                else
                     resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/issues/$indx/comments")
                     ncom=$(echo $resp | jq 'map(select(.user.login != "swarmia[bot]")) | length')
                     resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/pulls/$indx/reviews")
