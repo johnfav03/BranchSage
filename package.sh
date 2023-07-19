@@ -40,11 +40,13 @@ _print_tick() {
             if [[ -n $line ]]; then
                 resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/pulls?state=open&per_page=100&head=EnergySage:$line")
                 indx=$(jq -r '.[].number' --jsonargs <<< $resp)
-                resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/issues/$indx/comments")
-                ncom=$(echo $resp | jq 'map(select(.user.login != "swarmia[bot]")) | length')
-                resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/pulls/$indx/reviews")
-                nres=$(echo $resp | jq 'length')
-                stat+=' ('$(($ncom + $nres))')'
+                if [[ -n $indx ]]; then
+                    resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/issues/$indx/comments")
+                    ncom=$(echo $resp | jq 'map(select(.user.login != "swarmia[bot]")) | length')
+                    resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/pulls/$indx/reviews")
+                    nres=$(echo $resp | jq 'length')
+                    stat+=' ('$(($ncom + $nres))')'
+                fi
             fi
         fi
     echo $stat
@@ -284,6 +286,9 @@ _1pass_load() {
 #### PREP ####
 # SETS UP DIRECTORY, VENV, AND AWS
 _egs_prep() {
+    if _1pass_load; then
+        return
+    fi
     awsid=$AWS_PREF
     _prnl opening directory
 	cd ~/Dev/es-project/es-site/es
