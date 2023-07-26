@@ -14,43 +14,45 @@ _jira_show() {
     uname=$JIRA_UNAME
     ghtok=$GITHUB_TOKEN
     while IFS= read -r tick; do
-        stat=$(_print_tick $tick &)
+        stat=$(_print_tick $tick 2>/dev/null &)
         echo $stat
     done <<< $ticks
-    wait
+    # wait
 }
 _print_tick() {
     tick=$1
     _prsl $tick': '
-        blob=$(curl -s -u $uname:$token -X GET -H "Content-Type: application/json" https://energysage.atlassian.net/rest/api/3/issue/$tick)
-        stat=$(jq -r '.fields.status.name' <<< $blob)
-        if [[ $stat == "Awaiting Deployment" ]]; then
-            opts=$(git branch --format='%(refname:short)' | sed '/^develop$/d')
-            line=$(echo $opts | grep -E "$tick" | sed 's/^[[:blank:]]*//')
-            if [[ -n $line ]]; then
-                resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/pulls?state=closed&per_page=100&head=EnergySage:$line")
+    blob=$(curl -s -u $uname:$token -X GET -H "Content-Type: application/json" https://energysage.atlassian.net/rest/api/3/issue/$tick)
+    stat=$(jq -r '.fields.status.name' <<< $blob)
+    if [[ $stat == "Awaiting Deployment" ]]; then
+        opts=$(git branch --format='%(refname:short)' | sed '/^develop$/d')
+        line=$(echo $opts | grep -E "$tick" | sed 's/^[[:blank:]]*//')
+        if [[ -n $line ]]; then
+            resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/pulls?state=closed&per_page=100&head=EnergySage:$line")
+            if [ $(echo $resp | jq '. | length') -ne 0 ]; then
                 open=$(jq -r '.[].state' --jsonargs <<< $resp)
                 if [[ -n $open ]]; then
                     stat='Merged'
                 fi
             fi
-        elif [[ $stat == "Code Review" ]]; then
-            opts=$(git branch --format='%(refname:short)' | sed '/^develop$/d')
-            line=$(echo $opts | grep -E "$tick" | sed 's/^[[:blank:]]*//')
-            if [[ -n $line ]]; then
-                resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/pulls?state=open&per_page=100&head=EnergySage:$line")
-                indx=$(jq -r '.[].number' --jsonargs <<< $resp)
-                if [ -z $indx ]; then
-                    stat+=" (no PR)"
-                else
-                    resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/issues/$indx/comments")
-                    ncom=$(echo $resp | jq 'map(select(.user.login != "swarmia[bot]")) | length')
-                    resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/pulls/$indx/reviews")
-                    nres=$(echo $resp | jq 'length')
-                    stat+=' ('$(($ncom + $nres))')'
-                fi
+        fi
+    elif [[ $stat == "Code Review" ]]; then
+        opts=$(git branch --format='%(refname:short)' | sed '/^develop$/d')
+        line=$(echo $opts | grep -E "$tick" | sed 's/^[[:blank:]]*//')
+        if [[ -n $line ]]; then
+            resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/pulls?state=open&per_page=100&head=EnergySage:$line")
+            indx=$(jq -r '.[].number' --jsonargs <<< $resp)
+            if [ -z $indx ]; then
+                stat+=" (no PR)"
+            else
+                resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/issues/$indx/comments")
+                ncom=$(jq -r 'map(select(.user.login != "swarmia[bot]")) | length' --jsonargs <<< $resp)
+                resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/pulls/$indx/reviews")
+                nres=$(jq -r 'length' --jsonargs <<< $resp)
+                stat+=' ('$(($ncom + $nres))')'
             fi
         fi
+    fi
     echo $stat
 }
 
@@ -361,6 +363,10 @@ _egs_init() {
         export AWS_PREF=$awsid
     fi
     op item get 'BranchSage Credentials' | tail -n 4
+}
+_egs_repo() {
+    _prnl under construction
+    # ADD AND WITHDRAW REPO FROM 1PASS
 }
 #### HELP ####
 _egs_help() {

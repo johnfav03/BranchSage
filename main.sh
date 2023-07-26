@@ -26,6 +26,8 @@ elif [[ $1 == 'rest' ]]; then
     _git_rest $2
 elif [[ $1 == 'diff' ]]; then
     _git_diff
+elif [[ $1 == 'repo' ]]; then
+    _egs_repo
 else
     echo run help to see all commands
 fi
