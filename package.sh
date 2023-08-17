@@ -17,7 +17,7 @@ _jira_show() {
         stat=$(_print_tick $tick 2>/dev/null &)
         echo $stat
     done <<< $ticks
-    # wait
+    wait
 }
 _print_tick() {
     tick=$1
@@ -29,7 +29,7 @@ _print_tick() {
         line=$(echo $opts | grep -E "$tick" | sed 's/^[[:blank:]]*//')
         if [[ -n $line ]]; then
             resp=$(curl -s -X GET -H "Authorization: token $ghtok" --url "https://api.github.com/repos/EnergySage/es-site/pulls?state=closed&per_page=100&head=EnergySage:$line")
-            if [ $(echo $resp | jq '. | length') -ne 0 ]; then
+            if [ $(jq -r '. | length' --jsonargs <<< $resp) -ne 0 ]; then
                 open=$(jq -r '.[].state' --jsonargs <<< $resp)
                 if [[ -n $open ]]; then
                     stat='Merged'
@@ -307,28 +307,51 @@ _egs_prep() {
 # PRINTS ASCII ART OF THE ENERGYSAGE LOGO
 _egs_logo() {
     _prnl '****************************************'
+    sleep 0.05
     _prnl '*****************=.  .=*****************'
+    sleep 0.05
     _prnl '**************+-   ::   -+**************'
+    sleep 0.05
     _prnl '************+-   :+**+:   -+************'
+    sleep 0.05
     _prnl '***********=   :+******+:   =***********'
+    sleep 0.05
     _prnl '*********=.  :+*****:****+:  .=*********'
+    sleep 0.05
     _prnl '*******+:  .+******:  *****+.  :+*******'
+    sleep 0.05
     _prnl '******+.  -*******- = -******-   =******'
+    sleep 0.05
     _prnl '*****=  .+*******= -= =*******+.  =*****'
+    sleep 0.05
     _prnl '****=  .+*******+ :*= +********+.  =****'
+    sleep 0.05
     _prnl '***+   +*******= -**=::: :******+.  +***'
+    sleep 0.05
     _prnl '***-  -*******+ :=****=: +*******-  -***'
+    sleep 0.05
     _prnl '***-  =*******: :::=**- =********=  -***'
+    sleep 0.05
     _prnl '***+  :**********+ =*: +*********:  +***'
+    sleep 0.05
     _prnl '****.  =*********= =- =*********=  .****'
+    sleep 0.05
     _prnl '****+   =********- = -*********=   +****'
+    sleep 0.05
     _prnl '*****+.  :+*******  :********+:  .+*****'
+    sleep 0.05
     _prnl '*******=   :=******:*******=:   =*******'
+    sleep 0.05
     _prnl '*********=.   .:-=++++=-:.   .=*********'
+    sleep 0.05
     _prnl '***********+=:.          .:=+***********'
+    sleep 0.05
     _prnl '****************++-  -++****************'
+    sleep 0.05
     _prnl '******************=  =******************'
+    sleep 0.05
     _prnl '******************=  =******************'
+    sleep 0.05
     _prnl '****************************************'
 }
 #### INIT ####
